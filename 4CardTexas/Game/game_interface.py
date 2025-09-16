@@ -40,6 +40,10 @@ class GameInterface:
         print(f"第 {self.game.hand_number} 手牌 | 阶段: {self._format_phase(self.game.phase)}")
         print(f"底池: {format_chips(self.game.pot)} | 当前下注: {format_chips(self.game.current_bet)}")
         
+        # 调试：显示筹码总量
+        total_chips = sum(p.chips for p in self.game.players) + self.game.pot
+        print(f"筹码总量: {total_chips} (应该是{len(self.game.players) * 1000})")
+        
         # 显示公共牌
         if self.game.community_cards:
             community_str = " ".join(str(card) for card in self.game.community_cards)
@@ -67,14 +71,27 @@ class GameInterface:
             # 标记当前行动玩家
             current_marker = "👉 " if i == self.game.current_player and not self.game.betting_round_complete else "   "
             
+            # 位置标记
+            position_marker = ""
+            if player.position:
+                if player.position.value == "small_blind":
+                    position_marker = "(SB) "
+                elif player.position.value == "big_blind":
+                    position_marker = "(BB) "
+                elif player.position.value == "button":
+                    position_marker = "(BTN) "
+            
             # 显示玩家基本信息
             status_info = self._get_player_status_info(player)
             # 人类玩家显示真实手牌，AI玩家显示背面或在摊牌时显示真实手牌
             is_human = self.game.is_human_player(i) if self.game else False
             hand_display = player.get_hand_display(show_all_cards or is_human)
             
-            print(f"{current_marker}{player.name:8} | 筹码:{format_chips(player.chips):>6} | "
-                  f"底牌:{hand_display} | 当前下注:{format_chips(player.current_bet):>4} {status_info}")
+            # 当前手牌总下注 (total_bet)
+            total_bet_info = f" | 总下注:{format_chips(player.total_bet):>4}" if player.total_bet > 0 else ""
+            
+            print(f"{current_marker}{position_marker}{player.name:8} | 筹码:{format_chips(player.chips):>6} | "
+                  f"底牌:{hand_display} | 当前下注:{format_chips(player.current_bet):>4}{total_bet_info} {status_info}")
         
         print()
     

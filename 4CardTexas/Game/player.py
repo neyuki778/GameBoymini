@@ -141,7 +141,7 @@ class Player:
     
     def reset_for_new_betting_round(self):
         """为新一轮下注重置"""
-        self.current_bet = 0
+        self.current_bet = 0  # 重置当前轮次下注
         self.last_action = None
     
     def get_available_actions(self, current_bet: int, min_raise: int) -> List[PlayerAction]:

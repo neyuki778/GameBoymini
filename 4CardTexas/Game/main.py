@@ -84,6 +84,9 @@ def main():
             # 显示手牌结果
             interface.show_hand_result()
             
+            # 移动庄家位置到下一个玩家
+            game.advance_dealer()
+            
             # 检查是否有玩家被淘汰
             eliminated_players = game.eliminate_players()
             if eliminated_players:
