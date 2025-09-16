@@ -41,33 +41,44 @@ def main():
             
             # 翻牌前下注轮
             betting_round(interface, "翻牌前下注")
-            if game.phase == GamePhase.ENDED:
+            if game.phase == GamePhase.ENDED or game.phase == GamePhase.SHOWDOWN:
                 continue
             
-            # 发翻牌 (3张)
+            # 发翻牌 (2张)
             game.deal_flop()
             interface.display_game()
-            print("翻牌已发出!")
+            print("翻牌已发出! (2张公共牌)")
             time.sleep(1)
             
             # 翻牌后下注轮
             betting_round(interface, "翻牌后下注")
-            if game.phase == GamePhase.ENDED:
+            if game.phase == GamePhase.ENDED or game.phase == GamePhase.SHOWDOWN:
                 continue
             
-            # 发转牌 (1张)
+            # 发转牌 (第3张)
             game.deal_turn()
             interface.display_game()
-            print("转牌已发出!")
+            print("转牌已发出! (第3张公共牌)")
             time.sleep(1)
             
-            # 转牌后下注轮 (最终下注轮)
+            # 转牌后下注轮
             betting_round(interface, "转牌后下注")
-            if game.phase == GamePhase.ENDED:
+            if game.phase == GamePhase.ENDED or game.phase == GamePhase.SHOWDOWN:
                 continue
             
-            # 摊牌阶段
-            game.show_cards()
+            # 发河牌 (第4张)
+            game.deal_river()
+            interface.display_game() 
+            print("河牌已发出! (第4张公共牌)")
+            time.sleep(1)
+            
+            # 河牌后下注轮 (最终下注轮)
+            betting_round(interface, "河牌后下注")
+            
+            # 摊牌阶段 - 无论如何都要进入摊牌
+            if game.phase != GamePhase.ENDED:
+                game.show_cards()
+            
             interface.display_game()
             
             # 显示手牌结果

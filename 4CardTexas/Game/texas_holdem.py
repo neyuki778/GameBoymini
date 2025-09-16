@@ -292,13 +292,16 @@ class TexasHoldemGame:
     def _check_betting_round_complete(self):
         """检查下注轮次是否完成"""
         active_players = [p for p in self.players if p.status == PlayerStatus.ACTIVE]
+        all_in_players = [p for p in self.players if p.status == PlayerStatus.ALL_IN]
+        non_folded_players = active_players + all_in_players
         
-        # 如果只有一个或没有活跃玩家，结束游戏
-        if len(active_players) <= 1:
+        # 如果只有一个或没有非弃牌玩家，直接结束手牌并进入摊牌
+        if len(non_folded_players) <= 1:
             self.betting_round_complete = True
+            self.phase = GamePhase.SHOWDOWN  # 直接进入摊牌
             return
         
-        # 检查是否所有玩家都已行动且下注相等
+        # 检查是否所有可行动的玩家都已行动且下注相等
         can_act_players = [p for p in active_players if p.can_act()]
         
         if not can_act_players:
@@ -307,14 +310,14 @@ class TexasHoldemGame:
             return
         
         # 检查所有活跃玩家的下注是否相等(除了全押玩家)
-        non_all_in_players = [p for p in active_players if p.status != PlayerStatus.ALL_IN]
+        non_all_in_active_players = [p for p in active_players if p.status != PlayerStatus.ALL_IN]
         
-        if len(non_all_in_players) <= 1:
+        if len(non_all_in_active_players) <= 1:
             self.betting_round_complete = True
             return
         
-        # 检查所有非全押玩家的下注是否相等且都已行动
-        for player in non_all_in_players:
+        # 检查所有非全押的活跃玩家的下注是否相等且都已行动
+        for player in non_all_in_active_players:
             if player.current_bet != self.current_bet or player.last_action is None:
                 return
         
@@ -340,34 +343,36 @@ class TexasHoldemGame:
         self._start_betting_round()
     
     def _deal_flop(self):
-        """发翻牌(3张公共牌)"""
+        """发翻牌(2张公共牌) - 2+4模式"""
         # 烧牌
         deck_manager.get_cards(1)
-        # 发3张公共牌
-        self.community_cards.extend(deck_manager.get_cards(3))
+        # 发2张公共牌(不是传统的3张)
+        self.community_cards.extend(deck_manager.get_cards(2))
     
     def _deal_turn(self):
-        """发转牌(第4张公共牌)"""
+        """发转牌(第3张公共牌) - 2+4模式"""
         # 烧牌
         deck_manager.get_cards(1)
-        # 发第4张公共牌
+        # 发第3张公共牌
         self.community_cards.extend(deck_manager.get_cards(1))
-        
-        # 注意：2+4模式只有4张公共牌，这是最后一张
     
     def _deal_river(self):
-        """在2+4模式中，转牌后直接进入摊牌，这个方法不应该被调用"""
-        # 2+4模式不需要河牌，但保留这个方法以兼容标准德扑逻辑
-        pass
+        """发河牌(第4张公共牌) - 2+4模式"""
+        # 烧牌
+        deck_manager.get_cards(1)
+        # 发第4张公共牌(最后一张)
+        self.community_cards.extend(deck_manager.get_cards(1))
     
     def _showdown(self):
         """摊牌阶段"""
-        active_players = [p for p in self.players if p.status != PlayerStatus.FOLDED]
+        active_players = [p for p in self.players if p.status != PlayerStatus.FOLDED and p.status != PlayerStatus.OUT]
         
         if len(active_players) == 1:
             # 只有一个玩家，直接获胜
             winner = active_players[0]
             winner.chips += self.pot
+            self.pot = 0  # 清空底池
+            self.phase = GamePhase.ENDED  # 标记手牌结束
             return
         
         # 评估所有活跃玩家的牌力
@@ -402,6 +407,10 @@ class TexasHoldemGame:
                 winner.chips += pot_per_winner
                 if i < remainder:  # 余数给前几个获胜者
                     winner.chips += 1
+        
+        # 清空底池并标记手牌结束
+        self.pot = 0
+        self.phase = GamePhase.ENDED
     
     def is_hand_complete(self) -> bool:
         """检查当前手牌是否结束"""
@@ -453,6 +462,11 @@ class TexasHoldemGame:
         """发转牌(供外部调用)"""
         self._deal_turn()
         self.phase = GamePhase.TURN
+    
+    def deal_river(self):
+        """发河牌(供外部调用)"""
+        self._deal_river()
+        self.phase = GamePhase.RIVER
     
     def show_cards(self):
         """进入摊牌阶段(供外部调用)"""

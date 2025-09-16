@@ -45,10 +45,12 @@ class GameInterface:
             community_str = " ".join(str(card) for card in self.game.community_cards)
             card_count = len(self.game.community_cards)
             phase_name = ""
-            if card_count == 3:
+            if card_count == 2:
                 phase_name = " (翻牌)"
-            elif card_count == 4:
+            elif card_count == 3:
                 phase_name = " (转牌)"
+            elif card_count == 4:
+                phase_name = " (河牌)"
             print(f"公共牌: {community_str}{phase_name}")
         else:
             print("公共牌: (尚未发出)")

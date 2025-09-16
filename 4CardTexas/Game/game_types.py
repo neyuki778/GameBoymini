@@ -63,8 +63,8 @@ class GameConfig:
 
 def format_chips(chips: int) -> str:
     """格式化筹码显示"""
-    if chips >= 1000:
-        return f"{chips//1000}K"
+    # if chips >= 1000:
+    #     return f"{chips//1000}K"
     return str(chips)
 
 
