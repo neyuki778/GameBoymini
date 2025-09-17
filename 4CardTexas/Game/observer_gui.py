@@ -10,8 +10,8 @@ class TableObserverGUI:
         self.root.geometry("800x600")
         self.root.resizable(False, False)
 
-        # PNG资源路径
-        self.card_path = r"c:\Users\hkx\OneDrive\桌面\2025Summer\GameBoymini\Poker\PNG\Cards (medium)"
+        # PNG资源路径 - 改为large尺寸
+        self.card_path = r"c:\Users\hkx\OneDrive\桌面\2025Summer\GameBoymini\Poker\PNG\Cards (large)"
 
         # 创建Canvas
         self.canvas = tk.Canvas(self.root, width=800, height=600, bg='black')
@@ -25,8 +25,8 @@ class TableObserverGUI:
         self.pot_label = self.canvas.create_text(400, 50, text="奖池: 0", font=("Arial", 16), fill="white")
         self.round_label = self.canvas.create_text(400, 80, text="当前轮次: 翻牌前", font=("Arial", 14), fill="white")
 
-        # 公共牌位置 (5个位置)
-        self.community_positions = [(200, 300), (300, 300), (400, 300), (500, 300), (600, 300)]
+        # 公共牌位置 (4个位置) - 移到上方
+        self.community_positions = [(250, 150), (350, 150), (450, 150), (550, 150)]
         self.community_cards = [self.canvas.create_image(pos[0], pos[1], image=self.card_images.get('back', None)) for pos in self.community_positions]
 
         # 玩家相关将在update_display中动态创建
@@ -46,7 +46,6 @@ class TableObserverGUI:
                         self.card_images[f"{suit}_{rank}"] = PhotoImage(file=filepath)
         except Exception as e:
             print(f"加载图片失败: {e}")
-        print(f"已加载图片: {list(self.card_images.keys())}")  # 调试输出
 
     def _card_to_key(self, card):
         """将Card对象转换为图片key"""
@@ -74,13 +73,13 @@ class TableObserverGUI:
 
         # 更新公共牌
         community_cards = game_state.get('community_cards', [])
-        for i, card in enumerate(community_cards[:5]):
+        for i, card in enumerate(community_cards[:4]):
             key = self._card_to_key(card)
             image = self.card_images.get(key, self.card_images.get('back'))
             self.canvas.itemconfig(self.community_cards[i], image=image)
 
         # 隐藏多余的牌
-        for i in range(len(community_cards), 5):
+        for i in range(len(community_cards), 4):
             self.canvas.itemconfig(self.community_cards[i], image=self.card_images.get('back'))
 
         # 删除旧玩家显示
@@ -90,8 +89,8 @@ class TableObserverGUI:
         players = game_state.get('players', [])
         num_players = len(players)
         if num_players > 0:
-            center_x, center_y = 400, 300
-            radius = 180
+            center_x, center_y = 400, 400
+            radius = 150
             for i, player in enumerate(players):
                 # 计算圆形位置
                 angle = (i * 360 / num_players) - 90  # 从顶部开始
@@ -107,16 +106,14 @@ class TableObserverGUI:
                 self.canvas.create_text(x, y, text=text, font=("Arial", 10), fill="white", anchor="center", tags="player")
                 
                 # 手牌位置：玩家位置下方
-                card_y = y + 30
+                card_y = y + 40
                 card1_x = x - 25
                 card2_x = x + 25
                 
                 # 获取手牌
                 hole_cards = player.get('hole_cards', [])
-                print(f"玩家 {name} 手牌: {hole_cards}")  # 调试输出
                 card1_key = self._card_to_key(hole_cards[0] if len(hole_cards) > 0 else None)
                 card2_key = self._card_to_key(hole_cards[1] if len(hole_cards) > 1 else None)
-                print(f"卡牌key: {card1_key}, {card2_key}")  # 调试输出
                 
                 card1_img = self.card_images.get(card1_key, self.card_images.get('back'))
                 card2_img = self.card_images.get(card2_key, self.card_images.get('back'))
