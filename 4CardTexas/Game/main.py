@@ -49,7 +49,8 @@ def main():
                 {
                     'name': player.name,
                     'chips': player.chips,
-                    'status': '活跃' if player.status == PlayerStatus.ACTIVE else '弃牌' if player.status == PlayerStatus.FOLDED else '全押'
+                    'status': '活跃' if player.status == PlayerStatus.ACTIVE else '弃牌' if player.status == PlayerStatus.FOLDED else '全押',
+                    'hole_cards': player.hole_cards  # 添加手牌数据
                 } for player in game.players
             ]
         }

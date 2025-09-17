@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import PhotoImage
 import os
+import math
 
 class TableObserverGUI:
     def __init__(self, root=None):
@@ -28,13 +29,7 @@ class TableObserverGUI:
         self.community_positions = [(200, 300), (300, 300), (400, 300), (500, 300), (600, 300)]
         self.community_cards = [self.canvas.create_image(pos[0], pos[1], image=self.card_images.get('back', None)) for pos in self.community_positions]
 
-        # 玩家信息区域
-        self.player_labels = []
-        for i in range(6):  # 假设最多6个玩家
-            x = 50 if i < 3 else 700
-            y = 150 + (i % 3) * 100
-            label = self.canvas.create_text(x, y, text=f"玩家{i+1}: 筹码 1000", font=("Arial", 12), fill="white", anchor="w" if i < 3 else "e")
-            self.player_labels.append(label)
+        # 玩家相关将在update_display中动态创建
 
     def _load_card_images(self):
         """加载所有卡牌图片"""
@@ -51,6 +46,7 @@ class TableObserverGUI:
                         self.card_images[f"{suit}_{rank}"] = PhotoImage(file=filepath)
         except Exception as e:
             print(f"加载图片失败: {e}")
+        print(f"已加载图片: {list(self.card_images.keys())}")  # 调试输出
 
     def _card_to_key(self, card):
         """将Card对象转换为图片key"""
@@ -87,18 +83,46 @@ class TableObserverGUI:
         for i in range(len(community_cards), 5):
             self.canvas.itemconfig(self.community_cards[i], image=self.card_images.get('back'))
 
-        # 更新玩家信息
-        players = game_state.get('players', [])
-        for i, player in enumerate(players[:6]):
-            name = player.get('name', f'玩家{i+1}')
-            chips = player.get('chips', 0)
-            status = player.get('status', '活跃')
-            text = f"{name}: 筹码 {chips} ({status})"
-            self.canvas.itemconfig(self.player_labels[i], text=text)
+        # 删除旧玩家显示
+        self.canvas.delete("player")
 
-        # 隐藏多余玩家
-        for i in range(len(players), 6):
-            self.canvas.itemconfig(self.player_labels[i], text="")
+        # 更新玩家信息 - 动态创建
+        players = game_state.get('players', [])
+        num_players = len(players)
+        if num_players > 0:
+            center_x, center_y = 400, 300
+            radius = 180
+            for i, player in enumerate(players):
+                # 计算圆形位置
+                angle = (i * 360 / num_players) - 90  # 从顶部开始
+                rad_angle = math.radians(angle)
+                x = center_x + radius * math.cos(rad_angle)
+                y = center_y + radius * math.sin(rad_angle)
+                
+                # 玩家标签
+                name = player.get('name', f'玩家{i+1}')
+                chips = player.get('chips', 0)
+                status = player.get('status', '活跃')
+                text = f"{name}: 筹码 {chips} ({status})"
+                self.canvas.create_text(x, y, text=text, font=("Arial", 10), fill="white", anchor="center", tags="player")
+                
+                # 手牌位置：玩家位置下方
+                card_y = y + 30
+                card1_x = x - 25
+                card2_x = x + 25
+                
+                # 获取手牌
+                hole_cards = player.get('hole_cards', [])
+                print(f"玩家 {name} 手牌: {hole_cards}")  # 调试输出
+                card1_key = self._card_to_key(hole_cards[0] if len(hole_cards) > 0 else None)
+                card2_key = self._card_to_key(hole_cards[1] if len(hole_cards) > 1 else None)
+                print(f"卡牌key: {card1_key}, {card2_key}")  # 调试输出
+                
+                card1_img = self.card_images.get(card1_key, self.card_images.get('back'))
+                card2_img = self.card_images.get(card2_key, self.card_images.get('back'))
+                
+                self.canvas.create_image(card1_x, card_y, image=card1_img, tags="player")
+                self.canvas.create_image(card2_x, card_y, image=card2_img, tags="player")
 
         self.root.update()
 
@@ -115,8 +139,8 @@ if __name__ == "__main__":
         'round': '翻牌后',
         'community_cards': [],  # 传入Card对象列表
         'players': [
-            {'name': '玩家1', 'chips': 950, 'status': '活跃'},
-            {'name': '玩家2', 'chips': 800, 'status': '活跃'},
+            {'name': '玩家1', 'chips': 950, 'status': '活跃', 'hole_cards': []},  # 传入Card对象列表
+            {'name': '玩家2', 'chips': 800, 'status': '活跃', 'hole_cards': []},
         ]
     }
     gui.update_display(sample_state)
