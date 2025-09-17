@@ -14,11 +14,13 @@ sys.path.insert(0, project_root)
 
 from game_interface import GameInterface
 from game_types import GamePhase, PlayerAction, PlayerStatus
+from observer_gui import TableObserverGUI
 
 
 def main():
     """主游戏循环"""
     interface = GameInterface()
+    gui = TableObserverGUI()  # 初始化观察者GUI
     
     # 显示开始菜单
     interface.start_game_menu()
@@ -29,12 +31,36 @@ def main():
     
     game = interface.game
     
+    def build_game_state(game):
+        """构建游戏状态字典用于GUI更新"""
+        phase_map = {
+            GamePhase.PREFLOP: "翻牌前",
+            GamePhase.FLOP: "翻牌后", 
+            GamePhase.TURN: "转牌后",
+            GamePhase.RIVER: "河牌后",
+            GamePhase.SHOWDOWN: "摊牌",
+            GamePhase.ENDED: "结束"
+        }
+        return {
+            'pot': game.pot,
+            'round': phase_map.get(game.phase, "未知"),
+            'community_cards': game.community_cards,
+            'players': [
+                {
+                    'name': player.name,
+                    'chips': player.chips,
+                    'status': '活跃' if player.status == PlayerStatus.ACTIVE else '弃牌' if player.status == PlayerStatus.FOLDED else '全押'
+                } for player in game.players
+            ]
+        }
+    
     try:
         # 游戏主循环
         while not game.is_game_over():
             # 开始新一手牌
             game.start_new_hand()
             interface.display_game()
+            gui.update_display(build_game_state(game))  # 更新观察者GUI
             
             print(f"第 {game.hand_number} 手牌开始!")
             time.sleep(1)
@@ -47,6 +73,7 @@ def main():
             # 发翻牌 (2张)
             game.deal_flop()
             interface.display_game()
+            gui.update_display(build_game_state(game))  # 更新观察者GUI
             print("翻牌已发出! (2张公共牌)")
             time.sleep(1)
             
@@ -58,6 +85,7 @@ def main():
             # 发转牌 (第3张)
             game.deal_turn()
             interface.display_game()
+            gui.update_display(build_game_state(game))  # 更新观察者GUI
             print("转牌已发出! (第3张公共牌)")
             time.sleep(1)
             
@@ -68,7 +96,8 @@ def main():
             
             # 发河牌 (第4张)
             game.deal_river()
-            interface.display_game() 
+            interface.display_game()
+            gui.update_display(build_game_state(game))  # 更新观察者GUI
             print("河牌已发出! (第4张公共牌)")
             time.sleep(1)
             
@@ -80,8 +109,7 @@ def main():
                 game.show_cards()
             
             interface.display_game()
-            
-            # 显示手牌结果
+            gui.update_display(build_game_state(game))  # 更新观察者GUI            # 显示手牌结果
             interface.show_hand_result()
             
             # 移动庄家位置到下一个玩家
