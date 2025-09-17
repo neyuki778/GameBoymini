@@ -299,6 +299,7 @@ class TexasHoldemGame:
         if len(non_folded_players) <= 1:
             self.betting_round_complete = True
             self.phase = GamePhase.SHOWDOWN  # 直接进入摊牌
+            self._showdown()  # 立即分配筹码给获胜者
             return
         
         # 检查是否所有可行动的玩家都已行动且下注相等

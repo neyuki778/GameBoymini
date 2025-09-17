@@ -40,10 +40,6 @@ class GameInterface:
         print(f"第 {self.game.hand_number} 手牌 | 阶段: {self._format_phase(self.game.phase)}")
         print(f"底池: {format_chips(self.game.pot)} | 当前下注: {format_chips(self.game.current_bet)}")
         
-        # 调试：显示筹码总量
-        total_chips = sum(p.chips for p in self.game.players) + self.game.pot
-        print(f"筹码总量: {total_chips} (应该是{len(self.game.players) * 1000})")
-        
         # 显示公共牌
         if self.game.community_cards:
             community_str = " ".join(str(card) for card in self.game.community_cards)
