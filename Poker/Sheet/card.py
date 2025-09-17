@@ -111,3 +111,9 @@ class Card:
     def is_ace(self) -> bool:
         """判断是否为A"""
         return self.rank == Rank.ACE
+    
+    def get_image_filename(self) -> str:
+        """获取牌的图片文件名"""
+        suit_name = self.suit.value  # hearts, diamonds, clubs, spades
+        rank_name = str(self.rank.value).zfill(2)  # 02, 03, ..., 10, 11(J), 12(Q), 13(K), 14(A)
+        return f"card_{suit_name}_{rank_name}.png"
